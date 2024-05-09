@@ -1,0 +1,480 @@
+<!-- Licensed under a BSD license. See license.html for license -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Three.js - Primitives</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        #c {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+                    .split {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            }
+            .split>div {
+            width: 100%;
+            height: 100%;
+                }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+    <div class="split">
+        <div id="view1" tabindex="1"></div>
+        <div id="view2" tabindex="2"></div>
+     </div>
+</body>
+<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/"
+    }
+  }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import {TrackballControls} from 'three/addons/controls/TrackballControls.js'
+
+    function main() {
+        const canvas = document.querySelector('#c');
+        const renderer = new THREE.WebGLRenderer({ canvas });
+
+         // Scene and Background Scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x171717);
+
+        // 2 Screen Views 
+        const view1Elem = document.querySelector('#view1');
+        const view2Elem = document.querySelector('#view2');
+
+        // Camera (1) - Perfective Camera
+        const fov = 40;
+        const aspect = 2;  
+        const near = 0.1;
+        const far = 1000;
+        const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+        camera.position.z = 150; 
+
+        // Camera (2) - Orthographic Camera 
+        const left = -100;
+        const right = 100;
+        const top = 100;
+        const bottom = -100;
+        const near2 = 5;
+        const far2 = 1000;
+        const camera2 = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+        camera2.zoom = 2;
+        camera2.position.z = 150;
+
+        // Controls (1) - Orbit Control
+        const controls = new OrbitControls( camera, view1Elem );
+    
+        // Controls (2) - Track Ball Control
+        const controls2 = new TrackballControls( camera2, view2Elem  )
+        
+        
+        // Grid 
+        function cross_lines () {
+            const l = 5;
+            const d = 10;
+            const n = 20;
+
+          // Circle (Circle Equation was used to create grid boundaries)
+            const max_r = 10;
+            const h = 0, k = 0;
+            for ( let x = -n/2; x < n/2; x ++ ) {
+                for ( let z = -n/2; z < n/2; z ++ ) {
+                    let real_r = Math.sqrt(Math.pow(x - h, 2) + Math.pow(z - k, 2));
+                    if(real_r <= max_r){
+                        let n_r = (max_r - real_r) / max_r;
+                        let material = new THREE.LineBasicMaterial({
+                                            color: 0xFFFFFF,
+                                            opacity: n_r,
+                                            transparent: true
+                                        });
+
+                        // Cross Vertical line
+                        var points = [];
+                        points.push( new THREE.Vector3( x*d, -40, - l/2 + z*d ) );
+                        points.push( new THREE.Vector3( x*d, -40, l/2 + z*d ) );
+                        var geometry = new THREE.BufferGeometry().setFromPoints( points );
+
+                        var line = new THREE.Line( geometry, material );
+                        scene.add( line );
+
+                        // Cross Horizintal line
+                        var points = [];
+                        points.push( new THREE.Vector3( - l/2 + x*d, -40, z*d ) );
+                        points.push( new THREE.Vector3(  l/2 + x*d, -40, z*d ) );
+                        var geometry = new THREE.BufferGeometry().setFromPoints( points );
+
+                        var line = new THREE.Line( geometry, material );
+                        scene.add( line );
+
+                    }
+                    
+                }
+            }
+        }
+        cross_lines();
+
+
+        {
+            const color = 0xFFFFFF;
+            const intensity = 1;
+            const light = new THREE.DirectionalLight(color, intensity);
+            light.position.set(-1, 2, 4);
+            scene.add(light);
+        }
+        {
+            const color = 0xFFFFFF;
+            const intensity = 1;
+            const light = new THREE.DirectionalLight(color, intensity);
+            light.position.set(1, -2, -4);
+            scene.add(light);
+        }
+
+        const objects = [];
+        const spread = 15;
+
+        function addObject(x, y, z, obj) {
+            obj.position.x = x * spread;
+            obj.position.y = y * spread;
+            obj.position.z = z * spread; 
+
+            scene.add(obj);
+            objects.push(obj);
+        }
+
+        function createMaterial() {
+            const material = new THREE.MeshPhongMaterial({
+                side: THREE.DoubleSide,
+            });
+
+            const hue = Math.random();
+            const saturation = 1;
+            const luminance = .5;
+            material.color.setHSL(hue, saturation, luminance);
+
+            return material;
+        }
+
+        function addSolidGeometry(x, y, z, geometry) {
+            const mesh = new THREE.Mesh(geometry, createMaterial());
+            addObject(x, y, z, mesh);
+        }
+
+        function addLineGeometry(x, y, z, geometry) {
+            const material = new THREE.LineBasicMaterial({ color: 0x000000 });
+            const mesh = new THREE.LineSegments(geometry, material);
+            addObject(x, y, z, mesh);
+        }
+
+        for ( let ittr = 0; ittr < 3; ittr++) {
+            {
+                const width = 8;
+                const height = 8;
+                const depth = 8;
+                addSolidGeometry(-2, 2, ittr, new THREE.BoxGeometry(width, height, depth));
+            }
+            {
+                const radius = 7;
+                const segments = 24;
+                addSolidGeometry(-1, 2, ittr, new THREE.CircleGeometry(radius, segments));
+            }
+            {
+                const radius = 6;
+                const height = 8;
+                const segments = 16;
+                addSolidGeometry(0, 2, ittr, new THREE.ConeGeometry(radius, height, segments));
+            }
+            {
+                const radiusTop = 4;
+                const radiusBottom = 4;
+                const height = 8;
+                const radialSegments = 12;
+                addSolidGeometry(1, 2, ittr, new THREE.CylinderGeometry(radiusTop, radiusBottom, height, radialSegments));
+            }
+            {
+                const radius = 7;
+                addSolidGeometry(2, 2, ittr, new THREE.DodecahedronGeometry(radius));
+            }
+            {
+                const shape = new THREE.Shape();
+                const x = -2.5;
+                const y = -5;
+                shape.moveTo(x + 2.5, y + 2.5);
+                shape.bezierCurveTo(x + 2.5, y + 2.5, x + 2, y, x, y);
+                shape.bezierCurveTo(x - 3, y, x - 3, y + 3.5, x - 3, y + 3.5);
+                shape.bezierCurveTo(x - 3, y + 5.5, x - 1.5, y + 7.7, x + 2.5, y + 9.5);
+                shape.bezierCurveTo(x + 6, y + 7.7, x + 8, y + 4.5, x + 8, y + 3.5);
+                shape.bezierCurveTo(x + 8, y + 3.5, x + 8, y, x + 5, y);
+                shape.bezierCurveTo(x + 3.5, y, x + 2.5, y + 2.5, x + 2.5, y + 2.5);
+
+                const extrudeSettings = {
+                    steps: 2,
+                    depth: 2,
+                    bevelEnabled: true,
+                    bevelThickness: 1,
+                    bevelSize: 1,
+                    bevelSegments: 2,
+                };
+
+                addSolidGeometry(-2, 1, ittr, new THREE.ExtrudeGeometry(shape, extrudeSettings));
+            }
+            {
+                const radius = 7;
+                addSolidGeometry(-1, 1, ittr, new THREE.IcosahedronGeometry(radius));
+            }
+            {
+                const points = [];
+                for (let i = 0; i < 10; ++i) {
+                    points.push(new THREE.Vector2(Math.sin(i * 0.2) * 3 + 3, (i - 5) * .8));
+                }
+                addSolidGeometry(0, 1, ittr, new THREE.LatheGeometry(points));
+            }
+            {
+                const radius = 7;
+                addSolidGeometry(1, 1, ittr, new THREE.OctahedronGeometry(radius));
+            }
+    
+            {
+                const width = 9;
+                const height = 9;
+                const widthSegments = 2;
+                const heightSegments = 2;
+                addSolidGeometry(-2, 0, ittr, new THREE.PlaneGeometry(width, height, widthSegments, heightSegments));
+            }
+            {
+                const verticesOfCube = [
+                    -1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1,
+                    -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1,
+                ];
+                const indicesOfFaces = [
+                    2, 1, 0, 0, 3, 2,
+                    0, 4, 7, 7, 3, 0,
+                    0, 1, 5, 5, 4, 0,
+                    1, 2, 6, 6, 5, 1,
+                    2, 3, 7, 7, 6, 2,
+                    4, 5, 6, 6, 7, 4,
+                ];
+                const radius = 7;
+                const detail = 2;
+                addSolidGeometry(-1, 0, ittr, new THREE.PolyhedronGeometry(verticesOfCube, indicesOfFaces, radius, detail));
+            }
+            {3
+                const innerRadius = 2;
+                const outerRadius = 7;
+                const segments = 18;
+                addSolidGeometry(0, 0, ittr, new THREE.RingGeometry(innerRadius, outerRadius, segments));
+            }
+            {
+                const shape = new THREE.Shape();
+                const x = -2.5;
+                const y = -5;
+                shape.moveTo(x + 2.5, y + 2.5);
+                shape.bezierCurveTo(x + 2.5, y + 2.5, x + 2, y, x, y);
+                shape.bezierCurveTo(x - 3, y, x - 3, y + 3.5, x - 3, y + 3.5);
+                shape.bezierCurveTo(x - 3, y + 5.5, x - 1.5, y + 7.7, x + 2.5, y + 9.5);
+                shape.bezierCurveTo(x + 6, y + 7.7, x + 8, y + 4.5, x + 8, y + 3.5);
+                shape.bezierCurveTo(x + 8, y + 3.5, x + 8, y, x + 5, y);
+                shape.bezierCurveTo(x + 3.5, y, x + 2.5, y + 2.5, x + 2.5, y + 2.5);
+                addSolidGeometry(1, 0, ittr, new THREE.ShapeGeometry(shape));
+            }
+            {
+                const radius = 7;
+                const widthSegments = 12;
+                const heightSegments = 8;
+                addSolidGeometry(2, 0, ittr, new THREE.SphereGeometry(radius, widthSegments, heightSegments));
+            }
+            {
+                const radius = 7;
+                addSolidGeometry(-2, -1, ittr, new THREE.TetrahedronGeometry(radius));
+            }
+            {
+                const loader = new FontLoader();
+                // promisify font loading
+                function loadFont(url) {
+                    return new Promise((resolve, reject) => {
+                        loader.load(url, resolve, undefined, reject);
+                    });
+                }
+
+                async function doit() {
+                    const font = await loadFont('helvetiker_regular.typeface.json');  /* threejsfundamentals: url */
+                    const geometry = new TextGeometry('three.js', {
+                        font: font,
+                        size: 3.0,
+                        height: .2,
+                        curveSegments: 12,
+                        bevelEnabled: true,
+                        bevelThickness: 0.15,
+                        bevelSize: .3,
+                        bevelSegments: 5,
+                    });
+                    const mesh = new THREE.Mesh(geometry, createMaterial());
+                    geometry.computeBoundingBox();
+                    geometry.boundingBox.getCenter(mesh.position).multiplyScalar(-1);
+
+                    const parent = new THREE.Object3D();
+                    parent.add(mesh);
+
+                    addObject(-1, -1, ittr, parent);
+                }
+                doit();
+            }
+            {
+                const radius = 5;
+                const tubeRadius = 2;
+                const radialSegments = 8;
+                const tubularSegments = 24;
+                addSolidGeometry(0, -1, ittr, new THREE.TorusGeometry(radius, tubeRadius, radialSegments, tubularSegments));
+            }
+            {
+                const radius = 3.5;
+                const tube = 1.5;
+                const radialSegments = 8;
+                const tubularSegments = 64;
+                const p = 2;
+                const q = 3;
+                addSolidGeometry(1, -1, ittr, new THREE.TorusKnotGeometry(radius, tube, tubularSegments, radialSegments, p, q));
+            }
+            {
+                class CustomSinCurve extends THREE.Curve {
+                    constructor(scale) {
+                        super();
+                        this.scale = scale;
+                    }
+                    getPoint(t) {
+                        const tx = t * 3 - 1.5;
+                        const ty = Math.sin(2 * Math.PI * t);
+                        const tz = 0;
+                        return new THREE.Vector3(tx, ty, tz).multiplyScalar(this.scale);
+                    }
+                }
+
+                const path = new CustomSinCurve(4);
+                const tubularSegments = 20;
+                const radius = 1;
+                const radialSegments = 8;
+                const closed = false;
+                addSolidGeometry(2, -1, ittr, new THREE.TubeGeometry(path, tubularSegments, radius, radialSegments, closed));
+            }
+            {
+                const width = 8;
+                const height = 8;
+                const depth = 8;
+                const thresholdAngle = 15;
+                addLineGeometry(-1, -2, ittr, new THREE.EdgesGeometry(
+                    new THREE.BoxGeometry(width, height, depth),
+                    thresholdAngle));
+            }
+            {
+                const width = 8;
+                const height = 8;
+                const depth = 8;
+                addLineGeometry(1, -2, ittr, new THREE.WireframeGeometry(new THREE.BoxGeometry(width, height, depth)));
+            }
+        }
+
+        function resizeRendererToDisplaySize(renderer) {
+            const canvas = renderer.domElement;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            const needResize = canvas.width !== width || canvas.height !== height;
+            if (needResize) {
+                renderer.setSize(width, height, false);
+            }
+            return needResize;
+        }
+
+        // Scissors Function that seperates the two screen views
+        function setScissorForElement(elem) {
+            const canvasRect = canvas.getBoundingClientRect();
+            const elemRect = elem.getBoundingClientRect();
+            
+            // Canvas rectangle
+            const right = Math.min(elemRect.right, canvasRect.right) - canvasRect.left;
+            const left = Math.max(0, elemRect.left - canvasRect.left);
+            const bottom = Math.min(elemRect.bottom, canvasRect.bottom) - canvasRect.top;
+            const top = Math.max(0, elemRect.top - canvasRect.top);
+            
+            const width = Math.min(canvasRect.width, right - left);
+            const height = Math.min(canvasRect.height, bottom - top);
+            
+            // scissor to render canvas
+            const positiveYUpBottom = canvasRect.height - bottom;
+            renderer.setScissor(left, positiveYUpBottom, width, height);
+            renderer.setViewport(left, positiveYUpBottom, width, height);
+            
+    
+            return width / height;
+        }
+        function render(time) {
+            time *= 0.001;
+
+
+            objects.forEach((obj, ndx) => {
+                const speed = .1 + ndx * .05;
+                const rot = time * speed;
+                obj.rotation.x = rot;
+                obj.rotation.y = rot;
+            });
+
+            resizeRendererToDisplaySize(renderer);
+        
+            renderer.setScissorTest(true);
+            {
+                const aspect = setScissorForElement(view1Elem);
+            
+                camera.aspect = aspect;
+                camera.updateProjectionMatrix();
+                scene.background.set(0x2C2D31);
+            
+                renderer.render(scene, camera);
+            }
+            {
+                const aspect = setScissorForElement(view2Elem);
+            
+                camera2.aspect = aspect;
+                camera2.updateProjectionMatrix();
+            
+                scene.background.set(0x108A8A);
+            
+                renderer.render(scene, camera2);
+            }
+
+            requestAnimationFrame(render);
+            controls.update();
+            controls2.update(time)
+        }
+
+        requestAnimationFrame(render);
+    }
+
+    main();
+</script>
+
+</html>

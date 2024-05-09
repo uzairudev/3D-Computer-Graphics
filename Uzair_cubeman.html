@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - Cube Man </title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<style>
+			body {
+				background-color: #ccc;
+				color: #000;
+			}
+
+			a {
+				color: #f00;
+			}
+		</style>
+	</head>
+
+	<body>
+		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+		<script type="importmap">
+		  {
+			"imports": {
+			  "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
+			  "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/"
+			}
+		  }
+		</script>
+	
+	  <script type="module">
+		import * as THREE from 'three';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { VRButton } from 'three/addons/webxr/VRButton.js';
+					
+			let camera, controls, scene, renderer;
+
+			init();
+			animate();
+
+			function init() {
+                // Scene and Scene Background 
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x0000000 );
+
+                // Renderer
+				renderer = new THREE.WebGLRenderer( { antialias: false } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+                // Camera 
+				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera.position.set( 0.3, 1.6, -4);
+
+				// controls
+				controls = new OrbitControls( camera, renderer.domElement );
+				controls.listenToKeyEvents( window );
+				controls.enableDamping = false; 
+				controls.dampingFactor = 0.05;
+				controls.screenSpacePanning = false;
+				controls.minDistance = 100;
+				controls.maxDistance = 500;
+				controls.maxPolarAngle = Math.PI / 2;
+                controls.target = new THREE.Vector3(0, 1, 0);
+
+                // Axes Helper
+                const axesHelper = new THREE.AxesHelper( 5 );
+                
+                //Material  
+                const material = new THREE.MeshPhongMaterial( { color: 0xC4BA95, flatShading: false, transparent: false, opacity: 0.5 } );
+                const dmaterial = new THREE.MeshPhongMaterial( { color: 0xff0000, flatShading: true } );
+                const fmaterial = new THREE.MeshNormalMaterial()
+        
+                // // Floor/Grid
+                const helper = new THREE.GridHelper(1000, 40, 0x303030, 0x303030,);
+                helper.position.x = 70
+                helper.position.y = -11;
+                helper.position.z = 70
+                scene.add(helper);
+             
+                // VR button 
+                document.body.appendChild( VRButton.createButton( renderer ) );
+                renderer.xr.enabled = true;
+
+				// Cube Man (Group - Hierachy)
+                const cubeman = new THREE.Object3D();
+                cubeman.name = "cubeman"
+                scene.add(cubeman);
+                
+                // Waist as the reference point 
+                // waist
+                const WaistGeometry = new THREE.BoxGeometry( 5, 2, 2 );
+				const cubeWaist = new THREE.Mesh( WaistGeometry, material);
+				cubeWaist.position.set (1, 7, -0)
+				cubeman.add( cubeWaist );
+
+                // Stomach
+                const Stomachgeometry = new THREE.BoxGeometry( 3.5, 5, 3 );
+				const cubeStomach = new THREE.Mesh( Stomachgeometry, dmaterial);
+				cubeStomach.position.set (0, 4, -0)
+                cubeWaist.add(cubeStomach)
+
+                // Chest
+				const Chestgeometry = new THREE.BoxGeometry( 5, 5, 3 );
+				const cubeChest = new THREE.Mesh( Chestgeometry, material);
+				cubeChest.position.set (-0, 5.5, -0)
+                cubeStomach.add(cubeChest)
+
+                // Head
+                const Headgeometry = new THREE.BoxGeometry( 3, 3, 3 );
+				const cubeHead = new THREE.Mesh( Headgeometry, dmaterial );
+				cubeHead.position.set (-0, 5, -0)
+        		cubeChest.add(cubeHead)
+
+                // Left Shoulder Joint
+                const LeftShouldergeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeLeftShoulderJoint = new THREE.Mesh(LeftShouldergeometry, material);
+                cubeLeftShoulderJoint.position.set(-3.5, 2, -0)
+                cubeLeftShoulderJoint.name = "cubeLeftShoulderJoint"
+                cubeChest.add(cubeLeftShoulderJoint);
+
+                // Upper left Arm
+                const UpperLeftArmgeometry = new THREE.BoxGeometry( 6, 1.5, 1.5 );
+				const cubeUpperLeftArm = new THREE.Mesh( UpperLeftArmgeometry, material);
+				cubeUpperLeftArm.position.set (-4, 0, -0)
+				cubeLeftShoulderJoint.add ( cubeUpperLeftArm );
+
+                 // Left Elbow Joint
+                 const LeftElbowgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeLeftElbow = new THREE.Mesh(LeftElbowgeometry, material);
+                cubeLeftElbow.position.set(-4, 0, -0)
+                cubeLeftElbow.name = "cubeLeftElbow"
+                cubeUpperLeftArm.add(cubeLeftElbow);
+
+                // // lower left Arm
+                const LowerLeftArmgeometry = new THREE.BoxGeometry( 6, 1.5, 1.5 );
+				const cubeLowerLeftArm = new THREE.Mesh( LowerLeftArmgeometry, material);
+				cubeLowerLeftArm.position.set (-4, 0, -0)
+                cubeLeftElbow.add(cubeLowerLeftArm);
+
+                // Left Wrist
+                const LeftWristgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeLeftWrist = new THREE.Mesh(LeftWristgeometry, material);
+                cubeLeftWrist.position.set(-3.9, 0, -0)
+                cubeLowerLeftArm.add(cubeLeftWrist);
+
+                // Left Hand
+                const LeftHandgeometry = new THREE.BoxGeometry( 2, 2, 2 );
+                const cubeLeftHand = new THREE.Mesh( LeftHandgeometry, dmaterial)
+                cubeLeftHand.position.set (-5.9, 0, -0)
+                cubeLowerLeftArm.add( cubeLeftHand );
+
+                // Right Shoulder joint 
+                const RightShouldergeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeRightShoulderJoint = new THREE.Mesh(RightShouldergeometry, material);
+                cubeRightShoulderJoint.position.set(3.5, 2, -0)
+                cubeRightShoulderJoint.name = "cubeRightShoulderJoint"
+                cubeChest.add(cubeRightShoulderJoint);
+
+                // Upper Right Arm
+                const UpperRightArmgeometry = new THREE.BoxGeometry( 6, 1.5, 1.5 );
+				const cubeUpperRightArm = new THREE.Mesh( UpperRightArmgeometry, material);
+				cubeUpperRightArm.position.set (4, 0, -0)
+				cubeRightShoulderJoint.add ( cubeUpperRightArm );
+
+                // Right Elbow Joint
+                const RightElbowgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeRightElbow = new THREE.Mesh(RightElbowgeometry, material);
+                cubeRightElbow.position.set(4, 0, -0)
+                cubeRightElbow.name = "cubeRightElbow"
+                cubeUpperRightArm.add(cubeRightElbow);
+
+                // // lower Right Arm
+                const LowerRightArmgeometry = new THREE.BoxGeometry( 6, 1.5, 1.5 );
+				const cubeLowerRightArm = new THREE.Mesh( LowerRightArmgeometry, material);
+				cubeLowerRightArm.position.set (4, 0, -0)
+                cubeRightElbow.add(cubeLowerRightArm);
+
+                // Right Wrist
+                const RightWristgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeRightWrist = new THREE.Mesh(RightWristgeometry, material);
+                cubeRightWrist.position.set(3.9, 0, -0)
+                cubeLowerRightArm.add(cubeRightWrist);
+
+                // // Right Hand
+                const RightHandgeometry = new THREE.BoxGeometry( 2, 2, 2 );
+                const cubeRightHand = new THREE.Mesh( RightHandgeometry, dmaterial)
+                cubeRightHand.position.set (5.9, 0, -0)
+                cubeLowerRightArm.add( cubeRightHand );
+
+                // Left Thigh Joints
+                const LeftThighJointsgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeLeftThighJoint = new THREE.Mesh(LeftThighJointsgeometry, material);
+                cubeLeftThighJoint.position.set(-2.5, -1.9, -0)
+                cubeLeftThighJoint.name = "cubeLeftThighJoint"
+                cubeWaist.add(cubeLeftThighJoint);
+
+                 // Left Thigh
+                const LeftThighgeometry = new THREE.BoxGeometry( 1.5, 5, 2 );
+				const cubeLeftThigh = new THREE.Mesh( LeftThighgeometry, material);
+				cubeLeftThigh.position.set (-0.5, -3.5, -0)
+				cubeLeftThighJoint.add( cubeLeftThigh );
+
+                // Left Knee Joints
+                const LeftKneeJointsgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeLeftKneeJoint = new THREE.Mesh(LeftKneeJointsgeometry, material);
+                cubeLeftKneeJoint.position.set(-0.1, -3.5, -0)
+                cubeLeftKneeJoint.name = 'cubeLeftKneeJoint'
+                cubeLeftThigh.add(cubeLeftKneeJoint);
+
+                 // Left Lower Leg
+                const LeftLowerLeggeometry = new THREE.BoxGeometry( 1.5, 5, 2 );
+				const cubeLeftLowerLeg = new THREE.Mesh( LeftLowerLeggeometry, material);
+				cubeLeftLowerLeg.position.set (-0, -3.5, -0)
+				cubeLeftKneeJoint.add( cubeLeftLowerLeg );
+
+                // Left Ankle Joints
+                const LeftAnkleJointsgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeLeftAnkleJoint = new THREE.Mesh(LeftAnkleJointsgeometry, material);
+                cubeLeftAnkleJoint.position.set(-0.1, -3.5, -0)
+                cubeLeftLowerLeg.add(cubeLeftAnkleJoint);
+
+                // Left Foot
+                const LeftFootgeometry = new THREE.BoxGeometry( 1.5, 1, 3 );
+				const cubeLeftFoot = new THREE.Mesh( LeftFootgeometry, dmaterial);
+				cubeLeftFoot.position.set (-0.1, -1.5, -1)
+				cubeLeftAnkleJoint.add( cubeLeftFoot );
+
+                // Right Thigh Joints
+                const RightThighJointsgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeRightThighJoint = new THREE.Mesh(RightThighJointsgeometry, material);
+                cubeRightThighJoint.position.set(2.5, -1.9, -0)
+                cubeRightThighJoint.name = 'cubeRightThighJoint'
+                cubeWaist.add(cubeRightThighJoint);
+
+                // Right Thigh
+                const RightThighgeometry = new THREE.BoxGeometry( 1.5, 5, 2 );
+				const cubeRightThigh = new THREE.Mesh( RightThighgeometry, material);
+				cubeRightThigh.position.set (0.5, -3.5, -0)
+				cubeRightThighJoint.add( cubeRightThigh );
+
+                  // Right Knee Joints
+                const RightKneeJointsgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeRightKneeJoint = new THREE.Mesh(RightKneeJointsgeometry, material);
+                cubeRightKneeJoint.position.set(0.1, -3.5, -0)
+                cubeRightKneeJoint.name = 'cubeRightKneeJoint'
+                cubeRightThigh.add(cubeRightKneeJoint);
+
+                // Right Lower Leg
+                const RightLowerLeggeometry = new THREE.BoxGeometry( 1.5, 5, 2 );
+				const cubeRightLowerLeg = new THREE.Mesh( RightLowerLeggeometry, material);
+				cubeRightLowerLeg.position.set (0, -3.5, -0)
+				cubeRightKneeJoint.add( cubeRightLowerLeg );
+
+                 // Right Ankle Joints
+                const RightAnkleJointsgeometry = new THREE.BoxGeometry(1, 1, 1);
+                const cubeRightAnkleJoint = new THREE.Mesh(RightAnkleJointsgeometry, material);
+                cubeRightAnkleJoint.position.set(0.1, -3.5, -0)
+                cubeRightLowerLeg.add(cubeRightAnkleJoint);
+
+                // Right Foot
+                const RightFootgeometry = new THREE.BoxGeometry( 1.5, 1, 3 );
+				const cubeRightFoot = new THREE.Mesh( RightFootgeometry, dmaterial);
+				cubeRightFoot.position.set (0.1, -1.5, -1)
+				cubeRightAnkleJoint.add( cubeRightFoot );
+
+				// lights
+
+				const dirLight1 = new THREE.DirectionalLight( 0xffffff );
+				dirLight1.position.set( 1, 1, 1 );
+				scene.add( dirLight1 );
+
+				const dirLight2 = new THREE.DirectionalLight( 0x002288 );
+				dirLight2.position.set( - 1, - 1, - 1 );
+				scene.add( dirLight2 );
+
+				const ambientLight = new THREE.AmbientLight( 0x442222 );
+				scene.add( ambientLight );
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function onWindowResize() {
+				console.log ( window.innerWidth );
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate(time) {
+				// requestAnimationFrame( animate );
+                const speed = time * 0.002
+                const speed2 = time * 0.001
+                const multiplierLeftElbow = 0.1
+                const multiplierRightElbow = 0.1
+                const radius = 20
+                const rotationSpeed = 0.7
+                
+                // Left Shoulder Joint Rotation
+                const cubeLeftShoulderJoint = scene.getObjectByName("cubeLeftShoulderJoint")
+                cubeLeftShoulderJoint.rotation.x = Math.PI/2
+                cubeLeftShoulderJoint.rotation.y = Math.PI/2+ multiplierLeftElbow * Math.sin(speed)
+                
+                // Left Elbow Rotation 
+                const cubeLeftElbow = scene.getObjectByName("cubeLeftElbow")
+                cubeLeftElbow.rotation.z = Math.PI/2+Math.sin(speed)
+
+                // Right Shoulder Rotation
+                const cubeRightShoulderJoint = scene.getObjectByName("cubeRightShoulderJoint")
+                cubeRightShoulderJoint.rotation.x = -Math.PI/2
+                cubeRightShoulderJoint.rotation.y = Math.PI/2+ multiplierRightElbow * Math.sin(speed)
+
+                // Right Elbow Rotation 
+                const cubeRightElbow = scene.getObjectByName("cubeRightElbow")
+                cubeRightElbow.rotation.z = Math.PI/2+Math.sin(speed) * -1
+
+                // Left Thigh Joint Rotation
+                const cubeLeftThighJoint = scene.getObjectByName("cubeLeftThighJoint")
+                cubeLeftThighJoint.rotation.x = Math.sin(speed) * rotationSpeed
+                
+                // Left Knee Joint Rotation
+                const cubeLeftKneeJoint = scene.getObjectByName ("cubeLeftKneeJoint")
+                cubeLeftKneeJoint.rotation.x = -0.5*Math.abs(Math.sin(speed)) * rotationSpeed
+            
+                // Right Thigh Joint Rotation
+                const cubeRightThighJoint = scene.getObjectByName("cubeRightThighJoint")
+                cubeRightThighJoint.rotation.x = -Math.sin(speed) * rotationSpeed
+
+                // Right Knee Joint Rotation
+                const cubeRightKneeJoint = scene.getObjectByName ("cubeRightKneeJoint")
+                cubeRightKneeJoint.rotation.x = -0.5*Math.abs(Math.sin(speed)) * rotationSpeed
+
+                // Cube Man Rotation
+                const cubeman = scene.getObjectByName("cubeman")
+                cubeman.position.x = Math.sin(speed2) * radius
+                cubeman.position.z = Math.cos (speed2) * radius
+                cubeman.rotation.y = speed2 - Math.PI/2
+
+				controls.update(); 
+
+				render();
+			}
+
+            renderer.setAnimationLoop( function (time) {
+            animate(time)
+            renderer.render( scene, camera );
+
+            } );
+			    
+
+            function render() {
+            renderer.render( scene, camera );
+            }
+
+		</script>
+
+	</body>
+</html>
